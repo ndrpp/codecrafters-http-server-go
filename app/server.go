@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -20,16 +21,29 @@ func handleConnection(c net.Conn) {
 	case request.URL.Path == "/":
 		_, err = c.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
 
-	case strings.HasPrefix(request.URL.Path, "/files/"):
-		var dir string
-		if os.Args[1] == "--directory" {
-			dir = os.Args[2]
-		} else {
-			_, err = c.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+	case strings.HasPrefix(request.URL.Path, "/files/") && request.Method == "POST":
+		dir := os.Args[2]
+		filename := request.URL.Path[7:]
+
+		body, err := io.ReadAll(request.Body)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error processing request body: %s\n", err)
+			_, err = c.Write([]byte("HTTP/1.1 400 Bad Request\r\n\r\n"))
 			break
 		}
 
+		if err := os.WriteFile(dir+filename, body, 0644); err != nil {
+			fmt.Fprintf(os.Stderr, "Error writing file: %s\n", err)
+			_, err = c.Write([]byte("HTTP/1.1 500 Internal Server Error\r\n\r\n"))
+			break
+		}
+
+		_, err = c.Write([]byte("HTTP/1.1 201 Created\r\n\r\n"))
+
+	case strings.HasPrefix(request.URL.Path, "/files/") && request.Method == "GET":
+		dir := os.Args[2]
 		filename := request.URL.Path[7:]
+
 		content, err := os.ReadFile(fmt.Sprintf("%s%s", dir, filename))
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error reading file: %s\n", err)
@@ -37,6 +51,7 @@ func handleConnection(c net.Conn) {
 			break
 		}
 		data := string(content)
+
 		_, err = c.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: %d\r\n\r\n%s", len(data), data)))
 
 	case request.URL.Path == "/user-agent":
