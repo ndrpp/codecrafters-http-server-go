@@ -13,9 +13,9 @@ func main() {
 		fmt.Println("Failed to bind to port 4221")
 		os.Exit(1)
 	}
-    fmt.Println("TCP Server listening on port: ", 4221)
+	fmt.Println("TCP Server listening on port: ", 4221)
 
-    defer l.Close()
+	defer l.Close()
 	for {
 		conn, err := l.Accept()
 		if err != nil {
@@ -23,9 +23,12 @@ func main() {
 		}
 
 		go func(c net.Conn) {
-            fmt.Println("Connection from: ", c.RemoteAddr().String()) 
+			fmt.Println("Connection from: ", c.RemoteAddr().String())
 
-            c.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+			_, err := c.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+			if err != nil {
+				fmt.Println("Failed to write response to socket", err.Error())
+			}
 			c.Close()
 		}(conn)
 	}
