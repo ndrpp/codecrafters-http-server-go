@@ -16,17 +16,22 @@ func handleConnection(c net.Conn) {
 		fmt.Println("Failed to read request", err.Error())
 	}
 
-	if request.URL.Path == "/" {
+	switch {
+	case request.URL.Path == "/":
 		_, err = c.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
-	}
-	if strings.HasPrefix(request.URL.Path, "/echo/") {
+
+	case request.URL.Path == "/user-agent":
+		_, err = c.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", len(request.UserAgent()), request.UserAgent())))
+
+	case strings.HasPrefix(request.URL.Path, "/echo/"):
 		str := request.URL.Path[6:]
 		contentLength := len(str)
 
 		_, err = c.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", contentLength, str)))
-	}
-	_, err = c.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
 
+	default:
+		_, err = c.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+	}
 	if err != nil {
 		fmt.Println("Failed to write response to socket", err.Error())
 	}
