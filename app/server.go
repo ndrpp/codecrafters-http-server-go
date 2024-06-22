@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"os"
 )
@@ -12,10 +13,20 @@ func main() {
 		fmt.Println("Failed to bind to port 4221")
 		os.Exit(1)
 	}
+    fmt.Println("TCP Server listening on port: ", 4221)
 
-	_, err = l.Accept()
-	if err != nil {
-		fmt.Println("Error accepting connection: ", err.Error())
-		os.Exit(1)
+    defer l.Close()
+	for {
+		conn, err := l.Accept()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		go func(c net.Conn) {
+            fmt.Println("Connection from: ", c.RemoteAddr().String()) 
+
+            c.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+			c.Close()
+		}(conn)
 	}
 }
