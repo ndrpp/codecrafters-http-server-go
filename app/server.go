@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -25,9 +26,25 @@ func main() {
 		go func(c net.Conn) {
 			fmt.Println("Connection from: ", c.RemoteAddr().String())
 
-			_, err := c.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+			buffer := make([]byte, 1024)
+			_, err := c.Read(buffer)
 			if err != nil {
-				fmt.Println("Failed to write response to socket", err.Error())
+				fmt.Println("Failed to read request", err.Error())
+			}
+			data := strings.Split(string(buffer), "\r\n")
+			path := data[0][4 : len(data[0])-9]
+
+			switch path {
+			case string("/"):
+				_, err = c.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
+				if err != nil {
+					fmt.Println("Failed to write response to socket", err.Error())
+				}
+			default:
+				_, err = c.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+				if err != nil {
+					fmt.Println("Failed to write response to socket", err.Error())
+				}
 			}
 			c.Close()
 		}(conn)
