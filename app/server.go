@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
 )
 
 func handleConnection(c net.Conn) {
@@ -15,12 +16,19 @@ func handleConnection(c net.Conn) {
 		fmt.Println("Failed to read request", err.Error())
 	}
 
-	switch request.URL.Path {
-	case "/":
+	if request.URL.Path == "/" {
 		_, err = c.Write([]byte("HTTP/1.1 200 OK\r\n\r\n"))
-	default:
-		_, err = c.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
 	}
+	if strings.HasPrefix(request.URL.Path, "/echo/") {
+		str := request.URL.Path[6:]
+		contentType := "text/plain"
+		contentLength := len(str)
+
+		result := fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: %s\r\nContent-Length: %d\r\n\r\n%s", contentType, contentLength, str)
+		_, err = c.Write([]byte(result))
+	}
+	_, err = c.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+
 	if err != nil {
 		fmt.Println("Failed to write response to socket", err.Error())
 	}
