@@ -25,8 +25,8 @@ func handleConnection(c net.Conn) {
 		if os.Args[1] == "--directory" {
 			dir = os.Args[2]
 		} else {
-			fmt.Fprintf(os.Stderr, "`--directory` flag is missing")
-			os.Exit(1)
+			_, err = c.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
+			break
 		}
 
 		filename := request.URL.Path[7:]
