@@ -61,7 +61,14 @@ func handleConnection(c net.Conn) {
 		str := request.URL.Path[6:]
 		contentLength := len(str)
 
-		_, err = c.Write([]byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", contentLength, str)))
+		encodings := request.Header.Get("Accept-Encoding")
+		var response string
+		if strings.Contains(encodings, "gzip") {
+			response = fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\nContent-Encoding: gzip\r\n\r\n%s", contentLength, str)
+		} else {
+			response = fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", contentLength, str)
+		}
+		_, err = c.Write([]byte(response))
 
 	default:
 		_, err = c.Write([]byte("HTTP/1.1 404 Not Found\r\n\r\n"))
