@@ -76,7 +76,6 @@ func handleConnection(c net.Conn) {
 			}
 
 			response = fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\nContent-Encoding: gzip\r\n\r\n%s", len(b.Bytes()), b.Bytes())
-			fmt.Println(b.Bytes())
 		} else {
 			response = fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", contentLength, str)
 		}
